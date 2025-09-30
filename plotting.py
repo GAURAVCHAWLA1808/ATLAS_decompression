@@ -241,7 +241,7 @@ def plot_large_differences_hist(signed_diffs, variables, threshold=1e-2, xlim=(-
     else:
         plt.show()
 
-def plot_log_residual_contour(x_true, x_recon, gmm=None, varname="pt", m=10, offset=0.3, save_path=None):
+def plot_log_residual_contour(x_true, x_recon, theoretical=True, varname="pt", m=10, offset=0.3, save_path=None):
     # Calculate residuals and transform to log scale
     residual = x_true - x_recon
     log_x_true = np.log10((x_recon) + 1e-12)
@@ -280,37 +280,21 @@ def plot_log_residual_contour(x_true, x_recon, gmm=None, varname="pt", m=10, off
     # Plot
     plt.figure(figsize=(12, 8))
 
-    # Plot theoretical bounds
-    C = -m * np.log10(2) + offset
-    delta_x = np.log10(2)
-    x_vals = np.linspace(x_min, x_max, 1000)
-    x_step = np.floor(x_vals / delta_x) * delta_x
-    y_upper = x_vals + C
-    y_lower = -x_vals - C
-    plt.plot(x_step, y_upper, 'r--', linewidth=2, label=f'$y = \log_{{10}}|x| - {m}\log_{{10}}2$')
-    plt.plot(x_step, y_lower, 'b--', linewidth=2, label=f'$y = -\log_{{10}}|x| + {m}\log_{{10}}2$')
+    if theoretical:
+        # Plot theoretical bounds
+        C = -m * np.log10(2) + offset
+        delta_x = np.log10(2)
+        x_vals = np.linspace(x_min, x_max, 1000)
+        x_step = np.floor(x_vals / delta_x) * delta_x
+        y_upper = x_vals + C
+        y_lower = -x_vals - C
+        plt.plot(x_step, y_upper, 'r--', linewidth=2, label=f'$y = \log_{{10}}|x| - {m}\log_{{10}}2$')
+        plt.plot(x_step, y_lower, 'b--', linewidth=2, label=f'$y = -\log_{{10}}|x| + {m}\log_{{10}}2$')
     
     # Contour plot of actual data
     levels = np.linspace(0, hist_smooth.max(), 50)
     cs = plt.contourf(xx, yy, hist_smooth.T, levels=levels, cmap='viridis', alpha=0.7)
     plt.colorbar(cs, label='Density')
-    
-    # Plot GMM components if provided
-    if gmm is not None:
-        # Create evaluation grid
-        grid = np.column_stack([xx.ravel(), yy.ravel()])
-        scores = gmm.score_samples(grid)
-        scores = np.exp(scores).reshape(xx.shape)
-        
-        # Plot GMM contours
-        gmm_levels = np.linspace(0, scores.max(), 10)
-        plt.contour(xx, yy, scores, levels=gmm_levels, colors='red', linewidths=1, alpha=0.7)
-        
-        # Plot component means
-        plt.scatter(gmm.means_[:, 0], gmm.means_[:, 1], 
-                   c='red', s=100, marker='x', label='GMM Means')
-        plt.scatter(gmm.means_[:, 0], -gmm.means_[:, 1], 
-                   c='blue', s=100, marker='o', label='Mirrored Means')
     
     # Formatting
     plt.title(f'Log-Scale Residual vs True Value: {varname}')
